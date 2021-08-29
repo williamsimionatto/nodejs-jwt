@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 const router = require('express').Router();
 const User = require('../model/user');
+const bcrypt = require('bcryptjs');
 const {registerValidation, loginValidation} = require('../validation');
 
 router.post('/register', async (req : Request, res : Response) => {
@@ -14,15 +15,18 @@ router.post('/register', async (req : Request, res : Response) => {
     return res.status(400).send('Email alread exists');
   }
 
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(req.body.passowrd, salt);
+
   const user = new User({
     name: req.body.name,
     email: req.body.email,
-    password: req.body.password
+    password: hashedPassword
   });
 
   try {
     const savedUser = await user.save();
-    res.send(savedUser);
+    res.send({user: user._id});
   } catch (error) {
     res.status(400).send(error);
   }
